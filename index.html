@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三角方程式・不等式 ビジュアライザー</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap');
+        body {
+            font-family: 'Noto Sans JP', 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        canvas {
+            touch-action: none;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        .math-target {
+            transition: opacity 0.15s ease-in-out;
+        }
+    </style>
+</head>
+<body class="text-slate-800 bg-slate-50 min-h-screen flex flex-col">
+
+    <!-- ヘッダー -->
+    <header class="bg-indigo-600 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div class="flex items-center space-x-3">
+                <div class="bg-white text-indigo-600 p-2 rounded-lg font-bold text-xl shadow">
+                    sin cos tan
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wide">三角方程式・不等式 ビジュアライザー</h1>
+                    <p class="text-xs text-indigo-100">高校数学：単位円とグラフで直感的に理解する</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center bg-indigo-700/60 p-1.5 rounded-lg border border-indigo-500/30 text-sm">
+                <span class="mr-2 text-xs font-medium text-indigo-200">プリセット問題:</span>
+                <select id="presetSelect" class="bg-indigo-800 text-white text-xs sm:text-sm rounded border border-indigo-500 px-2 py-1 outline-none focus:ring-2 focus:ring-indigo-300">
+                    <option value="" selected>-- 問題を選択 --</option>
+                    <option value="p1">① sin θ = √3/2 (基本)</option>
+                    <option value="p2">② cos θ < -1/2 (不等式)</option>
+                    <option value="p3">③ tan θ ≥ 1 (正接の不等式)</option>
+                    <option value="p4">④ sin θ ≤ -1/2 (負の値)</option>
+                    <option value="p5">⑤ cos θ = 0 (境界値)</option>
+                    <option value="p6">⑥ tan θ ≤ -1/√3 (正接の負の値)</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- 左側：設定 ＆ 解カード -->
+        <div class="lg:col-span-4 flex flex-col gap-5">
+            
+            <!-- 1. 設定・操作カード -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 space-y-4">
+                <h2 class="text-base font-bold text-slate-700 border-b pb-2 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                    設定・操作
+                </h2>
+
+                <!-- 関数の選択 & 不等号 -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">三角関数</label>
+                        <select id="funcSelect" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-medium text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <option value="" selected>-- 未選択 --</option>
+                            <option value="sin">sin (正弦)</option>
+                            <option value="cos">cos (余弦)</option>
+                            <option value="tan">tan (正接)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">関係演算子</label>
+                        <select id="opSelect" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <option value="" selected>-- 未選択 --</option>
+                            <option value="=">＝ (等しい)</option>
+                            <option value=">">＞ (より大きい)</option>
+                            <option value=">=">≥ (以上)</option>
+                            <option value="<">＜ (より小さい)</option>
+                            <option value="<=">≤ (以下)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 値 k 設定 -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-xs font-semibold text-slate-500">目標の数値 k</label>
+                        <span id="kValDisplay" class="font-mono text-sm font-bold text-indigo-600">-</span>
+                    </div>
+                    <input type="range" id="kSlider" min="-1" max="1" step="0.01" value="0" class="w-full accent-indigo-600 cursor-pointer">
+                    
+                    <!-- 定番の値ショートカットボタン -->
+                    <div class="mt-2">
+                        <span class="block text-[11px] text-slate-400 mb-1">よく使う標準値（クリックで入力）:</span>
+                        <div class="grid grid-cols-5 gap-1" id="quickValBtns">
+                            <!-- JS dynamically generated -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 表示単位選択 -->
+                <div class="pt-2 border-t">
+                    <label class="block text-xs font-semibold text-slate-500 mb-2">角の単位</label>
+                    <div class="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-lg">
+                        <button id="unitRadBtn" class="py-1.5 text-xs font-bold rounded-md bg-white shadow-sm text-indigo-600 transition">ラジアン (rad)</button>
+                        <button id="unitDegBtn" class="py-1.5 text-xs font-bold rounded-md text-slate-600 hover:text-indigo-600 transition">度数法 (°)</button>
+                    </div>
+                </div>
+
+                <!-- チェックボックス群 -->
+                <div class="pt-2 border-t flex items-center justify-between cursor-pointer">
+                    <label for="showOrangeLinesCheck" class="text-xs font-semibold text-slate-600 cursor-pointer flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span>
+                        動点 θ (オレンジ色の線) を表示する
+                    </label>
+                    <input type="checkbox" id="showOrangeLinesCheck" class="w-4 h-4 text-amber-500 rounded border-slate-300 focus:ring-amber-500 cursor-pointer">
+                </div>
+
+                <div class="pt-2 border-t flex items-center justify-between cursor-pointer">
+                    <label for="showRootAnglesCheck" class="text-xs font-semibold text-slate-600 cursor-pointer flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
+                        解の角度を表示する
+                    </label>
+                    <input type="checkbox" id="showRootAnglesCheck" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer">
+                </div>
+
+                <div class="pt-2 border-t flex items-center justify-between cursor-pointer">
+                    <label for="showHighlightCheck" class="text-xs font-semibold text-slate-600 cursor-pointer flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-300 inline-block"></span>
+                        不等式の領域（ハイライト）を表示する
+                    </label>
+                    <input type="checkbox" id="showHighlightCheck" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer">
+                </div>
+
+                <div class="pt-2 border-t flex items-center justify-between cursor-pointer">
+                    <label for="showSolutionCheck" class="text-xs font-semibold text-slate-600 cursor-pointer flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-700 inline-block"></span>
+                        方程式・不等式の解を表示する
+                    </label>
+                    <input type="checkbox" id="showSolutionCheck" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer">
+                </div>
+
+                <div class="pt-2 border-t flex items-center justify-between cursor-pointer">
+                    <label for="showGraphCheck" class="text-xs font-semibold text-slate-600 cursor-pointer flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span>
+                        グラフ表示を表示する
+                    </label>
+                    <input type="checkbox" id="showGraphCheck" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer" checked>
+                </div>
+
+                <!-- 定義域の選択 -->
+                <div class="pt-2 border-t">
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">定義域 (θ の範囲)</label>
+                    <select id="domainSelect" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-medium text-slate-700 text-xs focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <option value="0_2pi" selected>0 ≦ θ < 2π (標準1周)</option>
+                        <option value="-pi_pi">-π ≦ θ ≦ π (対称範囲)</option>
+                        <option value="0_pi">0 ≦ θ ≦ π (上半円)</option>
+                        <option value="-pi2_pi2">-π/2 ≦ θ ≦ π/2 (主値範囲)</option>
+                        <option value="0_4pi">0 ≦ θ < 4π (2周)</option>
+                    </select>
+                </div>
+
+                <!-- スライダーによる動的な角度確認 -->
+                <div class="pt-2 border-t">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-xs font-semibold text-slate-500">動点 θ の位置を動かす</label>
+                        <span id="thetaValDisplay" class="font-mono text-xs font-bold text-indigo-600">0.00 (0°)</span>
+                    </div>
+                    <input type="range" id="thetaSlider" min="0" max="12.56" step="0.01" value="0" class="w-full accent-amber-500 cursor-pointer">
+                </div>
+            </div>
+
+            <!-- 2. 方程式・不等式の解カード -->
+            <div id="solutionCard" class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 transition-all hidden">
+                <div class="bg-emerald-50/70 border border-emerald-200 rounded-lg p-3.5 shadow-sm">
+                    <div class="flex items-center justify-between font-bold text-emerald-900 text-sm mb-2 border-b border-emerald-200/60 pb-1.5">
+                        <span class="flex items-center gap-1.5">
+                            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            方程式・不等式の解
+                        </span>
+                        <span id="solutionDomainHeader" class="math-target text-[11px] font-normal text-emerald-700">（定義域）</span>
+                    </div>
+                    <div id="solutionDisplay" class="math-target text-sm font-bold text-emerald-950 font-mono pt-1 min-h-[28px]">
+                        -
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 右側：視点・ビジュアル表示（単位円 & グラフ） -->
+        <div class="lg:col-span-8 flex flex-col gap-5">
+            
+            <!-- 1. 考え方カード -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">問題と解き方の視点</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                    <div id="equationTitle" class="md:col-span-5 math-target font-bold text-base text-indigo-900 bg-indigo-50 p-3 rounded-lg border border-indigo-100 text-center shadow-sm min-h-[48px] flex items-center justify-center">
+                        設定を選択してください
+                    </div>
+
+                    <div class="md:col-span-7 bg-blue-50/70 border border-blue-200 rounded-lg p-3 shadow-sm">
+                        <div class="flex items-center gap-1.5 font-bold text-blue-900 text-xs mb-1 border-b border-blue-200/60 pb-1">
+                            <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                            考え方
+                        </div>
+                        <div id="guideText" class="math-target text-xs text-slate-700 leading-relaxed min-h-[32px]">
+                            左側の設定・操作で「三角関数」「関係演算子」を選択するか、右上の「プリセット問題」を選択してください。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2カラム：単位円 & グラフ -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                <!-- 単位円キャンバス -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-col items-center">
+                    <div class="w-full flex justify-between items-center mb-2">
+                        <h3 class="text-sm font-bold text-slate-700 flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-indigo-600 inline-block"></span>
+                            単位円表示
+                        </h3>
+                        <span class="text-[11px] text-slate-400">ドラッグで角度変更</span>
+                    </div>
+                    <div class="relative w-full aspect-square max-w-[340px]">
+                        <canvas id="circleCanvas" width="340" height="340" class="w-full h-full bg-slate-50 rounded-lg border border-slate-100 shadow-inner cursor-crosshair"></canvas>
+                    </div>
+                </div>
+
+                <!-- 三角関数グラフキャンバス -->
+                <div id="graphContainer" class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-col items-center">
+                    <div class="w-full flex justify-between items-center mb-2">
+                        <h3 class="text-sm font-bold text-slate-700 flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
+                            y = f(θ) グラフ表示
+                        </h3>
+                        <span class="text-[11px] text-slate-400">青線: f(θ) / 赤線: y=k</span>
+                    </div>
+                    <div class="relative w-full aspect-square max-w-[340px]">
+                        <canvas id="graphCanvas" width="340" height="340" class="w-full h-full bg-slate-50 rounded-lg border border-slate-100 shadow-inner"></canvas>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 下部：動点における計算データの詳細 -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">現在の動点 θ における数値</h4>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                        <span class="text-[11px] text-slate-400 block">角度 θ</span>
+                        <span id="statusTheta" class="text-sm font-bold text-slate-800 font-mono">0.00 rad (0°)</span>
+                    </div>
+                    <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                        <span class="text-[11px] text-slate-400 block">sin θ</span>
+                        <span id="statusSin" class="text-sm font-bold text-slate-800 font-mono">0.000</span>
+                    </div>
+                    <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                        <span class="text-[11px] text-slate-400 block">cos θ</span>
+                        <span id="statusCos" class="text-sm font-bold text-slate-800 font-mono">1.000</span>
+                    </div>
+                    <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                        <span class="text-[11px] text-slate-400 block">tan θ</span>
+                        <span id="statusTan" class="text-sm font-bold text-slate-800 font-mono">0.000</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script>
+        const presets = {
+            p1: { func: 'sin', op: '=', k: 0.866025, domain: '0_2pi' },
+            p2: { func: 'cos', op: '<', k: -0.5, domain: '0_2pi' },
+            p3: { func: 'tan', op: '>=', k: 1, domain: '0_2pi' },
+            p4: { func: 'sin', op: '<=', k: -0.5, domain: '0_2pi' },
+            p5: { func: 'cos', op: '=', k: 0, domain: '0_2pi' },
+            p6: { func: 'tan', op: '<=', k: -0.57735, domain: '0_2pi' }
+        };
+
+        const domainPresets = {
+            '0_2pi': { min: 0, max: 2 * Math.PI, minInclusive: true, maxInclusive: false, label: '0 \\le \\theta < 2\\pi' },
+            '-pi_pi': { min: -Math.PI, max: Math.PI, minInclusive: true, maxInclusive: true, label: '-\\pi \\le \\theta \\le \\pi' },
+            '0_pi': { min: 0, max: Math.PI, minInclusive: true, maxInclusive: true, label: '0 \\le \\theta \\le \\pi' },
+            '-pi2_pi2': { min: -Math.PI / 2, max: Math.PI / 2, minInclusive: true, maxInclusive: true, label: '-\\frac{\\pi}{2} \\le \\theta \\le \\frac{\\pi}{2}' },
+            '0_4pi': { min: 0, max: 4 * Math.PI, minInclusive: true, maxInclusive: false, label: '0 \\le \\theta < 4\\pi' }
+        };
+
+        const state = {
+            func: '',
+            op: '',
+            k: 0.0,
+            isKSet: false,
+            unit: 'rad',
+            showOrangeLines: false, // 初期状態を非表示に設定
+            showRootAngles: false,
+            showHighlight: false,
+            showSolution: false,
+            showGraph: true,
+            domainKey: '0_2pi',
+            domainMin: 0,
+            domainMax: 2 * Math.PI,
+            domainMinInclusive: true,
+            domainMaxInclusive: false,
+            domainLabel: '0 \\le \\theta < 2\\pi',
+            initialDomainMax: 2 * Math.PI,
+            initialThetaOffset: 2 * Math.PI,
+            theta: 0,
+            isDragging: false
+        };
+
+        const elements = {
+            funcSelect: document.getElementById('funcSelect'),
+            opSelect: document.getElementById('opSelect'),
+            kSlider: document.getElementById('kSlider'),
+            kValDisplay: document.getElementById('kValDisplay'),
+            thetaSlider: document.getElementById('thetaSlider'),
+            thetaValDisplay: document.getElementById('thetaValDisplay'),
+            unitRadBtn: document.getElementById('unitRadBtn'),
+            unitDegBtn: document.getElementById('unitDegBtn'),
+            showOrangeLinesCheck: document.getElementById('showOrangeLinesCheck'),
+            showRootAnglesCheck: document.getElementById('showRootAnglesCheck'),
+            showHighlightCheck: document.getElementById('showHighlightCheck'),
+            showSolutionCheck: document.getElementById('showSolutionCheck'),
+            showGraphCheck: document.getElementById('showGraphCheck'),
+            graphContainer: document.getElementById('graphContainer'),
+            domainSelect: document.getElementById('domainSelect'),
+            quickValBtns: document.getElementById('quickValBtns'),
+            presetSelect: document.getElementById('presetSelect'),
+            
+            circleCanvas: document.getElementById('circleCanvas'),
+            graphCanvas: document.getElementById('graphCanvas'),
+            
+            equationTitle: document.getElementById('equationTitle'),
+            guideText: document.getElementById('guideText'),
+            solutionCard: document.getElementById('solutionCard'),
+            solutionDomainHeader: document.getElementById('solutionDomainHeader'),
+            solutionDisplay: document.getElementById('solutionDisplay'),
+            
+            statusTheta: document.getElementById('statusTheta'),
+            statusSin: document.getElementById('statusSin'),
+            statusCos: document.getElementById('statusCos'),
+            statusTan: document.getElementById('statusTan')
+        };
+
+        function formatRad(rad) {
+            let sign = rad < 0 ? '-' : '';
+            let absRad = Math.abs(rad);
+
+            const specialAngles = [
+                { val: 0, str: '0' },
+                { val: Math.PI / 6, str: '\\frac{\\pi}{6}' },
+                { val: Math.PI / 4, str: '\\frac{\\pi}{4}' },
+                { val: Math.PI / 3, str: '\\frac{\\pi}{3}' },
+                { val: Math.PI / 2, str: '\\frac{\\pi}{2}' },
+                { val: 2 * Math.PI / 3, str: '\\frac{2\\pi}{3}' },
+                { val: 3 * Math.PI / 4, str: '\\frac{3\\pi}{4}' },
+                { val: 5 * Math.PI / 6, str: '\\frac{5\\pi}{6}' },
+                { val: Math.PI, str: '\\pi' },
+                { val: 7 * Math.PI / 6, str: '\\frac{7\\pi}{6}' },
+                { val: 5 * Math.PI / 4, str: '\\frac{5\\pi}{4}' },
+                { val: 4 * Math.PI / 3, str: '\\frac{4\\pi}{3}' },
+                { val: 3 * Math.PI / 2, str: '\\frac{3\\pi}{2}' },
+                { val: 5 * Math.PI / 3, str: '\\frac{5\\pi}{3}' },
+                { val: 7 * Math.PI / 4, str: '\\frac{7\\pi}{4}' },
+                { val: 11 * Math.PI / 6, str: '\\frac{11\\pi}{6}' },
+                { val: 2 * Math.PI, str: '2\\pi' },
+                { val: 3 * Math.PI, str: '3\\pi' },
+                { val: 4 * Math.PI, str: '4\\pi' }
+            ];
+
+            for (let sa of specialAngles) {
+                if (Math.abs(absRad - sa.val) < 0.02) {
+                    if (sa.val === 0) return '0';
+                    return sign + sa.str;
+                }
+            }
+
+            return (rad / Math.PI).toFixed(2) + '\\pi';
+        }
+
+        function formatCanvasAngle(rad) {
+            if (state.unit === 'deg') {
+                return Math.round((rad * 180) / Math.PI) + '°';
+            }
+            let sign = rad < 0 ? '-' : '';
+            let absRad = Math.abs(rad);
+
+            const specialAngles = [
+                { val: 0, str: '0' },
+                { val: Math.PI / 6, str: 'π/6' },
+                { val: Math.PI / 4, str: 'π/4' },
+                { val: Math.PI / 3, str: 'π/3' },
+                { val: Math.PI / 2, str: 'π/2' },
+                { val: 2 * Math.PI / 3, str: '2π/3' },
+                { val: 3 * Math.PI / 4, str: '3π/4' },
+                { val: 5 * Math.PI / 6, str: '5π/6' },
+                { val: Math.PI, str: 'π' },
+                { val: 7 * Math.PI / 6, str: '7π/6' },
+                { val: 5 * Math.PI / 4, str: '5π/4' },
+                { val: 4 * Math.PI / 3, str: '4π/3' },
+                { val: 3 * Math.PI / 2, str: '3π/2' },
+                { val: 5 * Math.PI / 3, str: '5π/3' },
+                { val: 7 * Math.PI / 4, str: '7π/4' },
+                { val: 11 * Math.PI / 6, str: '11π/6' },
+                { val: 2 * Math.PI, str: '2π' },
+                { val: 5 * Math.PI / 2, str: '5π/2' },
+                { val: 3 * Math.PI, str: '3π' },
+                { val: 7 * Math.PI / 2, str: '7π/2' },
+                { val: 4 * Math.PI, str: '4π' }
+            ];
+
+            for (let sa of specialAngles) {
+                if (Math.abs(absRad - sa.val) < 0.02) {
+                    if (sa.val === 0) return '0';
+                    return sign + sa.str;
+                }
+            }
+            return (rad / Math.PI).toFixed(2) + 'π';
+        }
+
+        function formatKValue(k) {
+            const list = [
+                { val: 1, str: '1' },
+                { val: 0.866025, str: '\\frac{\\sqrt{3}}{2}' },
+                { val: 0.707106, str: '\\frac{1}{\\sqrt{2}}' },
+                { val: 0.5, str: '\\frac{1}{2}' },
+                { val: 0, str: '0' },
+                { val: -0.5, str: '-\\frac{1}{2}' },
+                { val: -0.707106, str: '-\\frac{1}{\\sqrt{2}}' },
+                { val: -0.866025, str: '-\\frac{\\sqrt{3}}{2}' },
+                { val: -1, str: '-1' },
+                { val: 1.73205, str: '\\sqrt{3}' },
+                { val: 0.57735, str: '\\frac{1}{\\sqrt{3}}' },
+                { val: -0.57735, str: '-\\frac{1}{\\sqrt{3}}' },
+                { val: -1.73205, str: '-\\sqrt{3}' }
+            ];
+            for (let item of list) {
+                if (Math.abs(k - item.val) < 0.01) return item.str;
+            }
+            return k.toFixed(2);
+        }
+
+        function formatKValueText(k) {
+            const list = [
+                { val: 1, text: '1' },
+                { val: 0.866025, text: '√3/2' },
+                { val: 0.707106, text: '1/√2' },
+                { val: 0.5, text: '1/2' },
+                { val: 0, text: '0' },
+                { val: -0.5, text: '-1/2' },
+                { val: -0.707106, text: '-1/√2' },
+                { val: -0.866025, text: '-√3/2' },
+                { val: -1, text: '-1' },
+                { val: 1.73205, text: '√3' },
+                { val: 0.57735, text: '1/√3' },
+                { val: -0.57735, text: '-1/√3' },
+                { val: -1.73205, text: '-√3' }
+            ];
+            for (let item of list) {
+                if (Math.abs(k - item.val) < 0.01) return item.text;
+            }
+            return k.toFixed(2);
+        }
+
+        function formatDeg(rad) {
+            return Math.round((rad * 180) / Math.PI) + '^\\circ';
+        }
+
+        function satisfiesInequality(th) {
+            if (!state.func || !state.op || !state.isKSet) return false;
+
+            let val;
+            if (state.func === 'sin') val = Math.sin(th);
+            else if (state.func === 'cos') val = Math.cos(th);
+            else if (state.func === 'tan') val = Math.tan(th);
+
+            const k = state.k;
+            const eps = 1e-4;
+            switch (state.op) {
+                case '=': return Math.abs(val - k) < 0.03;
+                case '>': return val > k + eps;
+                case '>=': return val >= k - eps;
+                case '<': return val < k - eps;
+                case '<=': return val <= k + eps;
+                default: return false;
+            }
+        }
+
+        function initQuickButtons() {
+            const values = [
+                { label: '1', val: 1 },
+                { label: '√3/2', val: 0.866025 },
+                { label: '1/√2', val: 0.707106 },
+                { label: '1/2', val: 0.5 },
+                { label: '1/√3', val: 0.57735 },
+                { label: '0', val: 0 },
+                { label: '-1/2', val: -0.5 },
+                { label: '-1/√2', val: -0.707106 },
+                { label: '-√3/2', val: -0.866025 },
+                { label: '-1', val: -1 }
+            ];
+            elements.quickValBtns.innerHTML = '';
+            values.forEach(v => {
+                const btn = document.createElement('button');
+                btn.className = 'bg-slate-100 hover:bg-indigo-100 hover:text-indigo-700 text-slate-700 text-[10px] font-semibold py-1 px-1 rounded transition text-center';
+                btn.innerText = v.label;
+                btn.onclick = () => {
+                    state.k = v.val;
+                    state.isKSet = true;
+                    elements.kSlider.value = v.val;
+                    updateUI();
+                };
+                elements.quickValBtns.appendChild(btn);
+            });
+        }
+
+        function calculateSolutions() {
+            if (!state.func || !state.op || !state.isKSet || !state.domainKey) return [];
+
+            const func = state.func;
+            const k = state.k;
+            const minAngle = state.domainMin;
+            const maxAngle = state.domainMax;
+
+            let roots = [];
+
+            const minM = Math.floor(minAngle / (2 * Math.PI)) - 1;
+            const maxM = Math.ceil(maxAngle / (2 * Math.PI)) + 1;
+
+            const isRootValid = (r) => {
+                const minOk = state.domainMinInclusive ? (r >= minAngle - 1e-4) : (r > minAngle + 1e-4);
+                const maxOk = state.domainMaxInclusive ? (r <= maxAngle + 1e-4) : (r < maxAngle - 1e-4);
+                return minOk && maxOk;
+            };
+
+            if (func === 'sin') {
+                if (Math.abs(k) <= 1) {
+                    let base1 = Math.asin(k);
+                    let base2 = Math.PI - Math.asin(k);
+
+                    for (let m = minM; m <= maxM; m++) {
+                        let r1 = base1 + 2 * Math.PI * m;
+                        let r2 = base2 + 2 * Math.PI * m;
+                        if (isRootValid(r1)) roots.push(r1);
+                        if (isRootValid(r2) && Math.abs(r1 - r2) > 1e-4) roots.push(r2);
+                    }
+                }
+            } else if (func === 'cos') {
+                if (Math.abs(k) <= 1) {
+                    let base1 = Math.acos(k);
+                    let base2 = -Math.acos(k);
+
+                    for (let m = minM; m <= maxM; m++) {
+                        let r1 = base1 + 2 * Math.PI * m;
+                        let r2 = base2 + 2 * Math.PI * m;
+                        if (isRootValid(r1)) roots.push(r1);
+                        if (isRootValid(r2) && Math.abs(r1 - r2) > 1e-4) roots.push(r2);
+                    }
+                }
+            } else if (func === 'tan') {
+                let base = Math.atan(k);
+
+                for (let m = minM * 2; m <= maxM * 2; m++) {
+                    let r = base + Math.PI * m;
+                    if (isRootValid(r)) roots.push(r);
+                }
+            }
+
+            roots = Array.from(new Set(roots.map(r => Number(r.toFixed(5))))).sort((a, b) => a - b);
+            return roots;
+        }
+
+        function drawUnitCircle() {
+            const canvas = elements.circleCanvas;
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+            const cx = w / 2;
+            const cy = h / 2;
+            const r = 110;
+
+            ctx.clearRect(0, 0, w, h);
+
+            const isConfigured = state.func && state.op && state.isKSet && state.domainKey;
+
+            // 1. 不等式を満たす領域の扇形・アーク描画
+            if (isConfigured && state.showHighlight && state.op !== '=') {
+                ctx.save();
+                const step = 0.01;
+
+                for (let th = state.domainMin; th <= state.domainMax; th += step) {
+                    if (satisfiesInequality(th)) {
+                        ctx.beginPath();
+                        ctx.moveTo(cx, cy);
+                        ctx.arc(cx, cy, r, -th, -(th + step), true);
+                        ctx.closePath();
+                        ctx.fillStyle = 'rgba(16, 185, 129, 0.25)';
+                        ctx.fill();
+                    }
+                }
+                ctx.restore();
+            }
+
+            // 2. 座標軸の描画
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(10, cy); ctx.lineTo(w - 10, cy);
+            ctx.moveTo(cx, 10); ctx.lineTo(cx, h - 10);
+            ctx.stroke();
+
+            ctx.fillStyle = '#64748b';
+            ctx.font = '12px Inter, sans-serif';
+            ctx.fillText('x', w - 18, cy - 8);
+            ctx.fillText('y', cx + 8, 20);
+            ctx.fillText('O', cx - 14, cy + 16);
+
+            // 3. 単位円本体
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 1.0;
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+            ctx.stroke();
+
+            if (!isConfigured) {
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = '12px Noto Sans JP, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('設定を選択してください', cx, cy + 50);
+                return;
+            }
+
+            // 定義域の円弧（例：0≦θ≦π のときは上半円）を強調描画
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, -state.domainMin, -state.domainMax, true);
+            ctx.stroke();
+
+            // 定義域の始端・終端を示す境界線（ガイド点線）
+            ctx.save();
+            ctx.strokeStyle = 'rgba(71, 85, 105, 0.4)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([3, 3]);
+
+            // 始端境界
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + r * Math.cos(state.domainMin), cy - r * Math.sin(state.domainMin));
+            ctx.stroke();
+
+            // 終端境界
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + r * Math.cos(state.domainMax), cy - r * Math.sin(state.domainMax));
+            ctx.stroke();
+            ctx.restore();
+
+            // 4. 目標線
+            const k = state.k;
+            ctx.save();
+            ctx.setLineDash([5, 5]);
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 2;
+
+            if (state.func === 'sin') {
+                if (Math.abs(k) <= 1.2) {
+                    const py = cy - k * r;
+                    ctx.beginPath();
+                    ctx.moveTo(20, py);
+                    ctx.lineTo(w - 20, py);
+                    ctx.stroke();
+                }
+            } else if (state.func === 'cos') {
+                if (Math.abs(k) <= 1.2) {
+                    const px = cx + k * r;
+                    ctx.beginPath();
+                    ctx.moveTo(px, 20);
+                    ctx.lineTo(px, h - 20);
+                    ctx.stroke();
+                }
+            } else if (state.func === 'tan') {
+                ctx.beginPath();
+                ctx.moveTo(cx - r * 1.3, cy + k * r * 1.3);
+                ctx.lineTo(cx + r * 1.3, cy - k * r * 1.3);
+                ctx.stroke();
+
+                ctx.strokeStyle = '#94a3b8';
+                ctx.beginPath();
+                ctx.moveTo(cx + r, 20);
+                ctx.lineTo(cx + r, h - 20);
+                ctx.stroke();
+
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.arc(cx + r, cy - k * r, 4, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+            ctx.restore();
+
+            // 5. 境界角（解）の動径とラベル
+            const roots = calculateSolutions();
+            ctx.strokeStyle = '#059669';
+            ctx.lineWidth = 1.5;
+            roots.forEach(rootAngle => {
+                const rx = cx + r * Math.cos(rootAngle);
+                const ry = cy - r * Math.sin(rootAngle);
+
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(rx, ry);
+                ctx.stroke();
+
+                ctx.fillStyle = '#059669';
+                ctx.beginPath();
+                ctx.arc(rx, ry, 5, 0, 2 * Math.PI);
+                ctx.fill();
+
+                if (state.showRootAngles) {
+                    const angLabel = formatCanvasAngle(rootAngle);
+                    const textX = cx + (r + 18) * Math.cos(rootAngle);
+                    const textY = cy - (r + 18) * Math.sin(rootAngle);
+
+                    ctx.save();
+                    ctx.font = 'bold 11px Inter, sans-serif';
+                    ctx.fillStyle = '#047857';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+
+                    const textWidth = ctx.measureText(angLabel).width;
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                    ctx.fillRect(textX - textWidth / 2 - 3, textY - 8, textWidth + 6, 16);
+                    ctx.strokeStyle = '#10b981';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(textX - textWidth / 2 - 3, textY - 8, textWidth + 6, 16);
+
+                    ctx.fillStyle = '#047857';
+                    ctx.fillText(angLabel, textX, textY);
+                    ctx.restore();
+                }
+            });
+
+            // 6. 現在の動点 θ の描画（チェックボックスがONの時のみ表示）
+            if (state.showOrangeLines) {
+                const curTheta = state.theta;
+                const px = cx + r * Math.cos(curTheta);
+                const py = cy - r * Math.sin(curTheta);
+
+                ctx.strokeStyle = '#f59e0b';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(px, py);
+                ctx.stroke();
+
+                ctx.fillStyle = '#f59e0b';
+                ctx.beginPath();
+                ctx.arc(px, py, 7, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+        }
+
+        function drawGraph() {
+            const canvas = elements.graphCanvas;
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+
+            ctx.clearRect(0, 0, w, h);
+
+            const paddingLeft = 35;
+            const paddingBottom = 35;
+            const graphWidth = w - paddingLeft - 15;
+            const graphHeight = h - paddingBottom - 20;
+            const centerY = 20 + graphHeight / 2;
+
+            const isConfigured = state.func && state.op && state.isKSet && state.domainKey;
+
+            const minTh = isConfigured ? state.domainMin : 0;
+            const maxTh = isConfigured ? state.domainMax : 2 * Math.PI;
+            const rangeTh = maxTh - minTh;
+            const scaleX = graphWidth / rangeTh;
+            const scaleY = graphHeight / 3;
+
+            if (isConfigured && state.showHighlight && state.op !== '=') {
+                ctx.save();
+                const stepPx = 2;
+                ctx.fillStyle = 'rgba(16, 185, 129, 0.2)';
+
+                for (let xPx = 0; xPx < graphWidth; xPx += stepPx) {
+                    const th = minTh + xPx / scaleX;
+                    if (satisfiesInequality(th)) {
+                        ctx.fillRect(paddingLeft + xPx, 20, stepPx, graphHeight);
+                    }
+                }
+                ctx.restore();
+            }
+
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 1.5;
+
+            ctx.beginPath();
+            ctx.moveTo(paddingLeft, centerY);
+            ctx.lineTo(w - 10, centerY);
+            ctx.stroke();
+
+            let yAxisX = paddingLeft + (0 - minTh) * scaleX;
+            if (yAxisX < paddingLeft || yAxisX > w - 10) yAxisX = paddingLeft;
+
+            ctx.beginPath();
+            ctx.moveTo(yAxisX, 10);
+            ctx.lineTo(yAxisX, h - paddingBottom);
+            ctx.stroke();
+
+            const gridStep = Math.PI / 2;
+            const startGrid = Math.ceil(minTh / gridStep) * gridStep;
+            ctx.font = '10px Inter, sans-serif';
+            ctx.fillStyle = '#64748b';
+            ctx.textAlign = 'center';
+
+            for (let gTh = startGrid; gTh <= maxTh + 0.01; gTh += gridStep) {
+                const gx = paddingLeft + (gTh - minTh) * scaleX;
+                if (gx >= paddingLeft && gx <= w - 10) {
+                    ctx.strokeStyle = '#f1f5f9';
+                    ctx.beginPath();
+                    ctx.moveTo(gx, 10);
+                    ctx.lineTo(gx, h - paddingBottom);
+                    ctx.stroke();
+
+                    ctx.strokeStyle = '#94a3b8';
+                    ctx.beginPath();
+                    ctx.moveTo(gx, centerY - 3);
+                    ctx.lineTo(gx, centerY + 3);
+                    ctx.stroke();
+
+                    const markText = formatCanvasAngle(gTh);
+                    ctx.fillText(markText, gx, centerY + 14);
+                }
+            }
+
+            ctx.textAlign = 'right';
+            ctx.fillText('1', yAxisX - 6, centerY - 1 * scaleY + 4);
+            ctx.fillText('-1', yAxisX - 6, centerY - (-1) * scaleY + 4);
+
+            if (!isConfigured) {
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = '12px Noto Sans JP, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('設定を選択するとグラフが表示されます', w / 2, centerY - 10);
+                return;
+            }
+
+            ctx.strokeStyle = '#3b82f6';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+
+            let isFirst = true;
+            for (let px = 0; px <= graphWidth; px += 1) {
+                const th = minTh + px / scaleX;
+                let val;
+
+                if (state.func === 'sin') val = Math.sin(th);
+                else if (state.func === 'cos') val = Math.cos(th);
+                else if (state.func === 'tan') val = Math.tan(th);
+
+                if (state.func === 'tan' && Math.abs(val) > 3) {
+                    isFirst = true;
+                    continue;
+                }
+
+                const py = centerY - val * scaleY;
+                
+                if (py >= 10 && py <= h - paddingBottom) {
+                    if (isFirst) {
+                        ctx.moveTo(paddingLeft + px, py);
+                        isFirst = false;
+                    } else {
+                        ctx.lineTo(paddingLeft + px, py);
+                    }
+                } else {
+                    isFirst = true;
+                }
+            }
+            ctx.stroke();
+
+            const k = state.k;
+            const targetY = centerY - k * scaleY;
+
+            if (targetY >= 10 && targetY <= h - paddingBottom) {
+                ctx.strokeStyle = '#ef4444';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(paddingLeft, targetY);
+                ctx.lineTo(w - 10, targetY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            const roots = calculateSolutions();
+            ctx.fillStyle = '#059669';
+            roots.forEach(rAngle => {
+                const rx = paddingLeft + (rAngle - minTh) * scaleX;
+                const ry = targetY;
+
+                if (rx >= paddingLeft && rx <= w - 10 && ry >= 10 && ry <= h - paddingBottom) {
+                    ctx.strokeStyle = '#10b981';
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([2, 2]);
+                    ctx.beginPath();
+                    ctx.moveTo(rx, ry);
+                    ctx.lineTo(rx, h - paddingBottom);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+
+                    ctx.beginPath();
+                    ctx.arc(rx, ry, 5, 0, 2 * Math.PI);
+                    ctx.fill();
+
+                    if (state.showRootAngles) {
+                        const rootLabel = formatCanvasAngle(rAngle);
+                        ctx.save();
+                        ctx.font = 'bold 10px Inter, sans-serif';
+                        ctx.textAlign = 'center';
+
+                        const tw = ctx.measureText(rootLabel).width;
+                        const tagY = h - 14;
+
+                        ctx.fillStyle = '#ecfdf5';
+                        ctx.fillRect(rx - tw / 2 - 3, tagY - 9, tw + 6, 14);
+                        ctx.strokeStyle = '#059669';
+                        ctx.lineWidth = 1;
+                        ctx.strokeRect(rx - tw / 2 - 3, tagY - 9, tw + 6, 14);
+
+                        ctx.fillStyle = '#047857';
+                        ctx.fillText(rootLabel, rx, tagY + 2);
+                        ctx.restore();
+                    }
+                }
+            });
+
+            // オレンジ色の表示物（動点θ線 ＆ 定義域終端線）の描画
+            if (state.showOrangeLines) {
+                const curTheta = state.theta;
+                const curX = paddingLeft + (curTheta - minTh) * scaleX;
+                let curVal;
+                if (state.func === 'sin') curVal = Math.sin(curTheta);
+                else if (state.func === 'cos') curVal = Math.cos(curTheta);
+                else if (state.func === 'tan') curVal = Math.tan(curTheta);
+
+                const curY = centerY - curVal * scaleY;
+
+                // 定義域の終わりの線（オレンジの破線）
+                const endX = paddingLeft + (maxTh - minTh) * scaleX;
+                if (endX >= paddingLeft && endX <= w - 10) {
+                    ctx.save();
+                    ctx.strokeStyle = '#f59e0b';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 3]);
+                    ctx.beginPath();
+                    ctx.moveTo(endX, 10);
+                    ctx.lineTo(endX, h - paddingBottom);
+                    ctx.stroke();
+
+                    // 終わりのラベル表示
+                    ctx.font = 'bold 10px Inter, sans-serif';
+                    ctx.fillStyle = '#d97706';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('終端', endX, 22);
+                    ctx.restore();
+                }
+
+                if (curX >= paddingLeft && curX <= w - 10 && curY >= 10 && curY <= h - paddingBottom) {
+                    ctx.strokeStyle = '#f59e0b';
+                    ctx.lineWidth = 1.5;
+                    ctx.setLineDash([]);
+                    ctx.beginPath();
+                    ctx.moveTo(curX, 10);
+                    ctx.lineTo(curX, h - paddingBottom);
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#f59e0b';
+                    ctx.beginPath();
+                    ctx.arc(curX, curY, 6, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                }
+            }
+        }
+
+        let mathjaxTimer = null;
+
+        function updateExplanation() {
+            if (!state.func || !state.op || !state.isKSet || !state.domainKey) {
+                elements.equationTitle.innerHTML = `設定を選択してください`;
+                elements.guideText.innerHTML = `左側の設定・操作で「三角関数」「関係演算子」を選択するか、右上の「プリセット問題」を選択してください。`;
+                elements.solutionDisplay.innerHTML = `-`;
+                elements.solutionDomainHeader.innerHTML = `（未選択）`;
+                if (state.showSolution) {
+                    elements.solutionCard.classList.remove('hidden');
+                } else {
+                    elements.solutionCard.classList.add('hidden');
+                }
+                return;
+            }
+
+            const func = state.func;
+            const op = state.op;
+            const k = state.k;
+            const kStr = formatKValue(k);
+            const kPlain = formatKValueText(k);
+
+            const eqTex = `\\${func} \\theta ${op === '=' ? '=' : op} ${kStr}`;
+
+            let guide = '';
+            if (func === 'sin') {
+                guide = `単位円上で <b>y座標</b> が <b>${kPlain}</b> ${op === '=' ? 'と等しくなる' : op.includes('>') ? '以上・より大きくなる' : '以下・より小さくなる'} 点の角度 θ を探します。`;
+            } else if (func === 'cos') {
+                guide = `単位円上で <b>x座標</b> が <b>${kPlain}</b> ${op === '=' ? 'と等しくなる' : op.includes('>') ? '以上・より大きくなる' : '以下・より小さくなる'} 点の角度 θ を探します。`;
+            } else if (func === 'tan') {
+                guide = `単位円の動径の <b>傾き</b> が <b>${kPlain}</b> ${op === '=' ? 'と等しくなる' : op.includes('>') ? '以上・より大きくなる' : '以下・より小さくなる'} 角度 θ を探します。`;
+            }
+
+            const roots = calculateSolutions();
+            let solTex = '';
+
+            if (op === '=') {
+                if (roots.length === 0) {
+                    solTex = '\\text{解なし}';
+                } else {
+                    solTex = '\\theta = ' + roots.map(r => state.unit === 'rad' ? formatRad(r) : formatDeg(r)).join(', \\;');
+                }
+            } else {
+                let intervals = [];
+                let inInterval = false;
+                let startAng = null;
+                const sampleStep = 0.003;
+
+                for (let th = state.domainMin; th <= state.domainMax; th += sampleStep) {
+                    if (th >= state.domainMax && !state.domainMaxInclusive) continue;
+                    const ok = satisfiesInequality(th);
+                    if (ok && !inInterval) {
+                        inInterval = true;
+                        startAng = th;
+                    } else if (!ok && inInterval) {
+                        inInterval = false;
+                        intervals.push({ start: startAng, end: th - sampleStep });
+                    }
+                }
+                if (inInterval) {
+                    intervals.push({ start: startAng, end: state.domainMax });
+                }
+
+                if (intervals.length === 0) {
+                    solTex = '\\text{解なし}';
+                } else {
+                    const fmt = (r) => state.unit === 'rad' ? formatRad(r) : formatDeg(r);
+                    
+                    solTex = intervals.map(inv => {
+                        const isNearMin = Math.abs(inv.start - state.domainMin) < 0.02;
+                        const isNearMax = Math.abs(inv.end - state.domainMax) < 0.02;
+
+                        const isStartAsymptote = func === 'tan' && Math.abs(Math.cos(inv.start)) < 0.05;
+                        const isEndAsymptote = func === 'tan' && Math.abs(Math.cos(inv.end)) < 0.05;
+
+                        let leftOp = (op.includes('=') && !isStartAsymptote) ? '\\le' : '<';
+                        if (isNearMin) {
+                            leftOp = state.domainMinInclusive ? '\\le' : '<';
+                        }
+
+                        let rightOp = (op.includes('=') && !isEndAsymptote) ? '\\le' : '<';
+                        if (isNearMax) {
+                            rightOp = state.domainMaxInclusive ? '\\le' : '<';
+                        }
+
+                        const sStr = fmt(inv.start);
+                        const eStr = fmt(inv.end);
+
+                        if (isNearMin && isNearMax && state.domainMinInclusive && state.domainMaxInclusive) {
+                            return `${state.domainLabel} \\quad (\\text{領域全体})`;
+                        }
+                        return `${sStr} ${leftOp} \\theta ${rightOp} ${eStr}`;
+                    }).join(' \\quad \\text{または} \\quad ');
+                }
+            }
+
+            if (state.showSolution) {
+                elements.solutionCard.classList.remove('hidden');
+            } else {
+                elements.solutionCard.classList.add('hidden');
+            }
+
+            const targets = [
+                elements.equationTitle,
+                elements.guideText,
+                elements.solutionDomainHeader,
+                elements.solutionDisplay
+            ];
+
+            targets.forEach(el => el.style.opacity = '0.25');
+
+            elements.equationTitle.innerHTML = `$$${eqTex}$$`;
+            elements.solutionDomainHeader.innerHTML = `$(${state.domainLabel})$`;
+            elements.guideText.innerHTML = guide;
+            elements.solutionDisplay.innerHTML = `$$${solTex}$$`;
+
+            if (mathjaxTimer) clearTimeout(mathjaxTimer);
+
+            mathjaxTimer = setTimeout(() => {
+                if (window.MathJax && MathJax.Hub) {
+                    MathJax.Hub.Queue(
+                        ["Typeset", MathJax.Hub, targets],
+                        function () {
+                            targets.forEach(el => el.style.opacity = '1');
+                        }
+                    );
+                } else {
+                    targets.forEach(el => el.style.opacity = '1');
+                }
+            }, 60);
+        }
+
+        function setupEventListeners() {
+            elements.funcSelect.addEventListener('change', (e) => {
+                state.func = e.target.value;
+                if (!state.isKSet) {
+                    state.k = 0;
+                    state.isKSet = true;
+                    elements.kSlider.value = 0;
+                }
+                updateUI();
+            });
+
+            elements.opSelect.addEventListener('change', (e) => {
+                state.op = e.target.value;
+                if (!state.isKSet) {
+                    state.k = 0;
+                    state.isKSet = true;
+                    elements.kSlider.value = 0;
+                }
+                updateUI();
+            });
+
+            elements.kSlider.addEventListener('input', (e) => {
+                state.k = parseFloat(e.target.value);
+                state.isKSet = true;
+                updateUI();
+            });
+
+            elements.domainSelect.addEventListener('change', (e) => {
+                const key = e.target.value;
+                state.domainKey = key;
+                if (key && domainPresets[key]) {
+                    const preset = domainPresets[key];
+                    state.domainMin = preset.min;
+                    state.domainMax = preset.max;
+                    state.domainMinInclusive = preset.minInclusive;
+                    state.domainMaxInclusive = preset.maxInclusive;
+                    state.domainLabel = preset.label;
+
+                    state.initialDomainMax = preset.max;
+                    state.initialThetaOffset = preset.max - state.theta;
+
+                    elements.thetaSlider.min = preset.min;
+                    elements.thetaSlider.max = preset.max + Math.PI * 2;
+                    if (state.theta < preset.min || state.theta > preset.max) {
+                        state.theta = preset.min;
+                        elements.thetaSlider.value = preset.min;
+                    }
+                } else {
+                    state.domainKey = '';
+                }
+                updateUI();
+            });
+
+            elements.thetaSlider.addEventListener('input', (e) => {
+                state.theta = parseFloat(e.target.value);
+                updateThetaOnly();
+            });
+
+            elements.unitRadBtn.addEventListener('click', () => {
+                state.unit = 'rad';
+                elements.unitRadBtn.className = 'py-1.5 text-xs font-bold rounded-md bg-white shadow-sm text-indigo-600 transition';
+                elements.unitDegBtn.className = 'py-1.5 text-xs font-bold rounded-md text-slate-600 hover:text-indigo-600 transition';
+                updateUI();
+            });
+
+            elements.unitDegBtn.addEventListener('click', () => {
+                state.unit = 'deg';
+                elements.unitDegBtn.className = 'py-1.5 text-xs font-bold rounded-md bg-white shadow-sm text-indigo-600 transition';
+                elements.unitRadBtn.className = 'py-1.5 text-xs font-bold rounded-md text-slate-600 hover:text-indigo-600 transition';
+                updateUI();
+            });
+
+            elements.showOrangeLinesCheck.addEventListener('change', (e) => {
+                state.showOrangeLines = e.target.checked;
+                updateThetaOnly();
+            });
+
+            elements.showRootAnglesCheck.addEventListener('change', (e) => {
+                state.showRootAngles = e.target.checked;
+                updateUI();
+            });
+
+            elements.showHighlightCheck.addEventListener('change', (e) => {
+                state.showHighlight = e.target.checked;
+                updateUI();
+            });
+
+            elements.showSolutionCheck.addEventListener('change', (e) => {
+                state.showSolution = e.target.checked;
+                updateUI();
+            });
+
+            elements.showGraphCheck.addEventListener('change', (e) => {
+                state.showGraph = e.target.checked;
+                updateUI();
+            });
+
+            elements.presetSelect.addEventListener('change', (e) => {
+                const key = e.target.value;
+                if (key && presets[key]) {
+                    const p = presets[key];
+                    state.func = p.func;
+                    state.op = p.op;
+                    state.k = p.k;
+                    state.isKSet = true;
+                    state.domainKey = p.domain;
+
+                    elements.funcSelect.value = p.func;
+                    elements.opSelect.value = p.op;
+                    elements.kSlider.value = p.k;
+                    elements.domainSelect.value = p.domain;
+
+                    const preset = domainPresets[p.domain];
+                    state.domainMin = preset.min;
+                    state.domainMax = preset.max;
+                    state.domainMinInclusive = preset.minInclusive;
+                    state.domainMaxInclusive = preset.maxInclusive;
+                    state.domainLabel = preset.label;
+
+                    state.initialDomainMax = preset.max;
+                    state.initialThetaOffset = preset.max - preset.min;
+
+                    elements.thetaSlider.min = preset.min;
+                    elements.thetaSlider.max = preset.max + Math.PI * 2;
+                    state.theta = preset.min;
+                    elements.thetaSlider.value = preset.min;
+
+                    updateUI();
+                } else if (key === '') {
+                    state.func = '';
+                    state.op = '';
+                    state.isKSet = false;
+                    elements.funcSelect.value = '';
+                    elements.opSelect.value = '';
+                    updateUI();
+                }
+            });
+
+            const canvas = elements.circleCanvas;
+            const handlePointerMove = (e) => {
+                if (!state.isDragging) return;
+                const rect = canvas.getBoundingClientRect();
+                const cx = rect.width / 2;
+                const cy = rect.height / 2;
+                const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left - cx;
+                const y = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top - cy;
+
+                let angle = Math.atan2(-y, x);
+                const minVal = state.domainKey ? state.domainMin : 0;
+                const maxVal = state.domainKey ? state.domainMax : 2 * Math.PI;
+
+                if (angle < 0 && minVal >= 0) angle += 2 * Math.PI;
+
+                state.theta = angle;
+                elements.thetaSlider.value = angle;
+                updateThetaOnly();
+            };
+
+            canvas.addEventListener('mousedown', (e) => { state.isDragging = true; handlePointerMove(e); });
+            window.addEventListener('mousemove', handlePointerMove);
+            window.addEventListener('mouseup', () => { state.isDragging = false; });
+
+            canvas.addEventListener('touchstart', (e) => { state.isDragging = true; handlePointerMove(e); });
+            window.addEventListener('touchmove', handlePointerMove);
+            window.addEventListener('touchend', () => { state.isDragging = false; });
+        }
+
+        function updateThetaOnly() {
+            state.domainMax = state.theta + state.initialThetaOffset;
+
+            const deg = Math.round(state.theta * 180 / Math.PI);
+            elements.thetaValDisplay.innerText = state.unit === 'rad' 
+                ? `${state.theta.toFixed(2)} rad (${deg}°)` 
+                : `${deg}° (${state.theta.toFixed(2)} rad)`;
+
+            elements.statusTheta.innerText = `${state.theta.toFixed(2)} rad (${deg}°)`;
+            elements.statusSin.innerText = Math.sin(state.theta).toFixed(3);
+            elements.statusCos.innerText = Math.cos(state.theta).toFixed(3);
+            
+            const tanVal = Math.tan(state.theta);
+            elements.statusTan.innerText = Math.abs(tanVal) > 100 ? '∞' : tanVal.toFixed(3);
+
+            drawUnitCircle();
+
+            if (state.showGraph) {
+                elements.graphContainer.classList.remove('hidden');
+                drawGraph();
+            } else {
+                elements.graphContainer.classList.add('hidden');
+            }
+        }
+
+        function updateUI() {
+            elements.kValDisplay.innerText = state.isKSet ? state.k.toFixed(3) : '-';
+            updateThetaOnly();
+            updateExplanation();
+        }
+
+        window.onload = function () {
+            initQuickButtons();
+            setupEventListeners();
+            updateUI();
+        };
+
+        window.addEventListener('resize', () => {
+            drawUnitCircle();
+            drawGraph();
+        });
+    </script>
+</body>
+</html>
