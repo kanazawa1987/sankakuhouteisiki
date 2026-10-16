@@ -103,12 +103,12 @@
                         <label class="text-xs font-semibold text-slate-500">目標の数値 k</label>
                         <span id="kValDisplay" class="font-mono text-sm font-bold text-indigo-600">-</span>
                     </div>
-                    <input type="range" id="kSlider" min="-1" max="1" step="0.01" value="0" class="w-full accent-indigo-600 cursor-pointer">
+                    <input type="range" id="kSlider" min="-2" max="2" step="0.01" value="0" class="w-full accent-indigo-600 cursor-pointer">
                     
                     <!-- 定番の値ショートカットボタン -->
                     <div class="mt-2">
                         <span class="block text-[11px] text-slate-400 mb-1">よく使う標準値（クリックで入力）:</span>
-                        <div class="grid grid-cols-5 gap-1" id="quickValBtns">
+                        <div class="grid grid-cols-6 gap-1" id="quickValBtns">
                             <!-- JS dynamically generated -->
                         </div>
                     </div>
@@ -509,21 +509,24 @@
 
         function initQuickButtons() {
             const values = [
+                { label: '√3', val: 1.73205 },
                 { label: '1', val: 1 },
                 { label: '√3/2', val: 0.866025 },
                 { label: '1/√2', val: 0.707106 },
                 { label: '1/2', val: 0.5 },
                 { label: '1/√3', val: 0.57735 },
                 { label: '0', val: 0 },
+                { label: '-1/√3', val: -0.57735 },
                 { label: '-1/2', val: -0.5 },
                 { label: '-1/√2', val: -0.707106 },
                 { label: '-√3/2', val: -0.866025 },
-                { label: '-1', val: -1 }
+                { label: '-1', val: -1 },
+                { label: '-√3', val: -1.73205 }
             ];
             elements.quickValBtns.innerHTML = '';
             values.forEach(v => {
                 const btn = document.createElement('button');
-                btn.className = 'bg-slate-100 hover:bg-indigo-100 hover:text-indigo-700 text-slate-700 text-[10px] font-semibold py-1 px-1 rounded transition text-center';
+                btn.className = 'bg-slate-100 hover:bg-indigo-100 hover:text-indigo-700 text-slate-700 text-[10px] font-semibold py-1 px-0.5 rounded transition text-center';
                 btn.innerText = v.label;
                 btn.onclick = () => {
                     state.k = v.val;
